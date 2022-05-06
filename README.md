@@ -1,4 +1,4 @@
-# A simple tool to load configuration from file
+# A simple tool to load configuration from file [![Rust](https://github.com/Azkarell/ron_config/actions/workflows/rust.yml/badge.svg)](https://github.com/Azkarell/ron_config/actions/workflows/rust.yml)
 
 
 ## Supported file formats
