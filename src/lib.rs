@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-use std::fs;
 use std::path::Path;
 use ron::{Value};
 use serde::de::DeserializeOwned;
@@ -28,6 +27,7 @@ impl Config {
             config: value,
         }
     }
+
     pub fn from_file<P: AsRef<Path>>(path: P) -> Self {
         let file = std::fs::read_to_string(path).expect("Could not read config file");
         let config = ron::from_str(&file).expect("Could not parse config file");
@@ -67,6 +67,7 @@ impl Config {
 
         value.clone().into_rust::<T>().ok()
     }
+
     /// # Example
     /// ```
     /// use ron_config::Config;
