@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::PathBuf;
 use ron::Value;
 
 pub trait ConfigSource {
@@ -6,13 +7,13 @@ pub trait ConfigSource {
 }
 
 pub(crate) struct FileConfigSource {
-    path: String,
+    path: PathBuf,
 }
 
 impl FileConfigSource {
-    pub fn new(path: &str) -> FileConfigSource {
+    pub fn new(path: PathBuf) -> FileConfigSource {
         FileConfigSource {
-            path: path.to_owned()
+            path
         }
     }
 }

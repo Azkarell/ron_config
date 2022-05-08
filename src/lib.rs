@@ -1,5 +1,6 @@
-use std::fmt::Debug;
-use std::path::Path;
+use std::fmt::{Debug, Display, Formatter};
+use std::fs;
+use std::path::{Path, PathBuf};
 use ron::{Value};
 use serde::de::DeserializeOwned;
 use crate::configpath::{ConfigPath, DefaultPathResolver, PathResolver};
@@ -106,6 +107,31 @@ pub struct ConfigBuilder {
     sources: Vec<Box<dyn ConfigSource>>,
 }
 
+pub struct FolderOptions {
+    pub include_subfolders: bool,
+    pub extension: String,
+}
+
+impl Default for FolderOptions {
+    fn default() -> Self {
+        Self {
+            include_subfolders: false,
+            extension: "ron".to_string(),
+        }
+    }
+}
+
+impl Display for FolderOptions {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if self.include_subfolders {
+            write!(f, "/**")?;
+        }
+        write!(f, "/*.{}", self.extension)
+    }
+}
+
+
+
 impl ConfigBuilder {
     pub fn new() -> ConfigBuilder {
         ConfigBuilder {
@@ -114,11 +140,46 @@ impl ConfigBuilder {
     }
 
     pub fn file(&mut self, path: &str) -> &mut ConfigBuilder {
-        self.add_source(Box::new(FileConfigSource::new(path)))
+        let meta  = fs::metadata(path).expect("Could not read config file");
+        if !meta.is_file() {
+            panic!("Config file is not a file");
+        }
+        self.add_source(Box::new(FileConfigSource::new(path.into())))
     }
 
     pub fn str(&mut self, s: &str) -> &mut ConfigBuilder {
         self.add_source(Box::new(StringConfigSource::new(s)))
+    }
+
+
+    /// # Example
+    /// ```
+    /// use ron_config::ConfigBuilder;
+    ///
+    /// let mut config = ConfigBuilder::new()
+    ///    .folder("./examples", None)
+    ///   .build();
+    /// assert_eq!(config.try_get::<String>("hi".into()).unwrap(), "i am a string");
+    /// assert_eq!(config.try_get::<String>("else".into()).unwrap(), "i am another string");
+    /// assert_eq!(config.try_get::<String>("first.hello".into()).unwrap(), "world");
+    /// ```
+    pub fn folder(&mut self, path: &str, options: Option<FolderOptions>) -> &mut ConfigBuilder {
+        let meta = fs::metadata(path).expect("Could not read folder");
+        if !meta.is_dir() {
+            panic!("{} is not a folder", path);
+        }
+        let pattern = format!("{}{}", path, options.unwrap_or_default());
+        for entry in glob::glob(&pattern).expect("Failed to read glob") {
+            match entry {
+                Ok(path) => {
+                    self.add_source(Box::new(FileConfigSource::new(path)));
+                }
+                Err(e) => {
+                    panic!("Failed to read glob: {}", e);
+                }
+            }
+        }
+        self
     }
 
     pub fn add_source(&mut self, source: Box<dyn ConfigSource>) -> &mut ConfigBuilder {
