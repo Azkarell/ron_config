@@ -18,10 +18,12 @@ impl FileConfigSource {
     }
 }
 
+
 impl ConfigSource for FileConfigSource {
     fn get_value(&self) -> Value {
         let file = fs::read_to_string(&self.path).expect("Failed to read file");
-        ron::from_str(&file).expect("Failed to parse config file")
+        let value = ron::from_str(&file).expect("Failed to parse config file");
+        value
     }
 }
 

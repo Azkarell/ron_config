@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 use ron::{Value};
 use serde::de::DeserializeOwned;
 use crate::configpath::{ConfigPath, DefaultPathResolver, PathResolver};
@@ -321,6 +321,33 @@ mod tests {
         assert_eq!(t, 2);
         let t: i32 = config.try_get("baz".into()).unwrap();
         assert_eq!(t, 3);
+    }
+
+    #[test]
+    fn test_folder_config_merge() {
+        let config = ConfigBuilder::new()
+           .folder("./examples", None)
+          .build();
+        assert_eq!(config.try_get::<String>("hi".into()).unwrap(), "i am a string");
+        assert_eq!(config.try_get::<String>("else".into()).unwrap(), "i am another string");
+        assert_eq!(config.try_get::<String>("first.hello".into()).unwrap(), "world");
+    }
+
+    #[derive(Deserialize, Debug, PartialEq)]
+    struct Complex {
+        t: i32,
+        str: String,
+        list: Vec<i32>,
+    }
+    #[test]
+    fn test_complex() {
+        let config = Config::from_string("(t: 20, str: \"test\",  list: [1,2,3])");
+        let complex: Complex = config.try_get(".".into()).unwrap();
+        assert_eq!(complex, Complex {
+            t: 20,
+            str: "test".to_string(),
+            list: vec![1,2,3]
+        });
     }
 }
 
